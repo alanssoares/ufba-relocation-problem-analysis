@@ -47,7 +47,7 @@ com espaço para a relocação.
 | `README.md` | Este documento |
 | `results/results_long.csv` | Uma linha por par (instância, método), com a sequência completa de relocações |
 | `results/summary.md` | Tabelas gerais e por arquivo, geradas pelo script |
-| `run_log.txt` | Saída do script durante a execução completa |
+| `run_log.txt` | Saída local da execução completa (não versionada, ver `.gitignore`) |
 
 ## 3. Mecânica comum (`brp.py`)
 
@@ -222,7 +222,83 @@ print(verify(inst, [(3, 2), (3, 2), (3, 1)]))   # formato de exemplo do LEIAME.m
 
 ## 9. Resultados
 
-RESULTS_PLACEHOLDER
+Execução completa: 170 instâncias (17 arquivos), 4 métodos, orçamento de 30 s por instância e
+método, em uma máquina Windows com Python 3.13. Resultado: **680 linhas, todas as soluções
+verificadas** (0 falhas). Tempo total de execução: cerca de 17 minutos. Os valores completos
+estão em `results/summary.md` e `results/results_long.csv`.
+
+### 9.1 Resumo geral
+
+| Método | Soluções verificadas | Gap médio (%) | Gap máximo (%) | Igual a Z\* | Melhor que Min-Max | Pior que Min-Max | Tempo médio (s) | Tempo máximo (s) | Timeouts |
+|---|---|---|---|---|---|---|---|---|---|
+| Min-Max | 170 | 4,59 | 31,03 | 101 | 0 | 0 | 0,000 | 0,00 | 0 |
+| A* | 144 | 0,00 | 0,00 | 143 | 42 | 0 | 5,196 | 30,17 | 26 |
+| GLAH-R (D=3) | 170 | 0,30 | 9,09 | 156 | 67 | 0 | 0,149 | 2,91 | 0 |
+| GLAH-R (D=4) | 170 | 0,29 | 6,67 | 157 | 66 | 0 | 0,409 | 8,64 | 0 |
+
+**Como ler a tabela.** O A* só tem solução para as instâncias em que provou o ótimo (144 de
+170). Por isso a média de reposicionamentos do A* (12,65) é calculada só sobre essas 144 e não
+é comparável às outras linhas. Para as 26 instâncias com timeout, o A* não devolveu solução, e
+o valor de referência Z\* vem da melhor solução entre os outros métodos. Nas instâncias do
+N49, o Z\* é o melhor valor conhecido, sem prova de ótimo.
+
+### 9.2 Principais observações
+
+- **GLAH-R nunca fica pior que o Min-Max.** Em todas as 170 instâncias, o GLAH-R (D=3 e D=4)
+  devolve valor igual ou melhor. O gap médio cai de 4,59% (Min-Max) para cerca de 0,3%.
+- **Nas instâncias pequenas (conjunto A), o GLAH-R encontra o ótimo.** Em todas as 50 instâncias,
+  os dois valores de D chegam ao ótimo provado pelo A*.
+- **Nas instâncias maiores, o GLAH-R fica quase sempre no ótimo.** Entre as 144 instâncias
+  com ótimo provado, o D=3 não é ótimo em 10 casos, e o D=4 em 11. Todos os casos estão nos
+  arquivos W7 (H de 5 a 7), com diferença de 1 ou 2 reposicionamentos. O pior gap do GLAH-R é
+  9,09% (`brp_W7_H5_N31`, instância 6, D=3).
+- **Aumentar D não melhorou a qualidade de forma clara nesta execução.** D=4 ficou praticamente
+  empatado com D=3: gap médio de 0,29% contra 0,30%, e 157 instâncias iguais ao Z\* contra 156.
+  Nas 144 instâncias com ótimo provado, porém, o D=4 ficou acima do ótimo em 11 casos e o D=3
+  em 10. O custo de tempo cresce cerca de 2,7 vezes (0,409 s contra 0,149 s em média). Uma
+  busca mais profunda não garante uma solução melhor, porque a regra de avaliação no nível
+  inferior pode levar a outro caminho.
+- **O A* é exato, mas perde o orçamento nas instâncias maiores.** Ele provou o ótimo em todas
+  as 50 instâncias do conjunto A e em 94 das 120 do conjunto B. Os 26 timeouts estão nos
+  arquivos W7 com N ≥ 32 e H de 6 a 8. Nesses casos, o limite inferior devolvido ficou entre 26 e 51.
+- **Min-Max é rápido, mas bem mais distante do ótimo.** Ele fica acima do Z\* em 69 das 170
+  instâncias e chega a 31% acima no pior caso.
+
+### 9.3 Resultado por arquivo
+
+Gap médio (%) em relação ao Z\* de cada instância, e número de instâncias em que o A\* provou o ótimo.
+
+| Arquivo | W | H | N | Min-Max | GLAH-R (D=3) | GLAH-R (D=4) | A\* ótimo provado |
+|---|---|---|---|---|---|---|---|
+| `brp_W3_H4_N8` | 3 | 4 | 8 | 2,22 | 0,00 | 0,00 | 10/10 |
+| `brp_W4_H4_N10` | 4 | 4 | 10 | 0,00 | 0,00 | 0,00 | 10/10 |
+| `brp_W4_H5_N12` | 4 | 5 | 12 | 3,50 | 0,00 | 0,00 | 10/10 |
+| `brp_W5_H4_N15` | 5 | 4 | 15 | 4,36 | 0,00 | 0,00 | 10/10 |
+| `brp_W5_H5_N18` | 5 | 5 | 18 | 6,91 | 0,00 | 0,00 | 10/10 |
+| `brp_W7_H5_N16` | 7 | 5 | 16 | 0,00 | 0,00 | 0,00 | 10/10 |
+| `brp_W7_H5_N23` | 7 | 5 | 23 | 0,71 | 0,00 | 0,00 | 10/10 |
+| `brp_W7_H5_N31` | 7 | 5 | 31 | 9,33 | 1,83 | 1,37 | 10/10 |
+| `brp_W7_H6_N18` | 7 | 6 | 18 | 0,00 | 0,00 | 0,00 | 10/10 |
+| `brp_W7_H6_N28` | 7 | 6 | 28 | 3,73 | 0,50 | 0,50 | 10/10 |
+| `brp_W7_H6_N37` | 7 | 6 | 37 | 6,02 | 1,04 | 1,71 | 8/10 |
+| `brp_W7_H7_N22` | 7 | 7 | 22 | 1,00 | 0,00 | 0,00 | 10/10 |
+| `brp_W7_H7_N32` | 7 | 7 | 32 | 5,78 | 0,45 | 0,45 | 9/10 |
+| `brp_W7_H7_N43` | 7 | 7 | 43 | 7,71 | 0,52 | 0,28 | 2/10 |
+| `brp_W7_H8_N24` | 7 | 8 | 24 | 2,10 | 0,00 | 0,00 | 10/10 |
+| `brp_W7_H8_N37` | 7 | 8 | 37 | 11,75 | 0,40 | 0,40 | 5/10 |
+| `brp_W7_H8_N49` | 7 | 8 | 49 | 12,70 | 0,41 | 0,19 | 0/10 |
+
+Tempo médio do A\* nos arquivos grandes: 24,6 s (N43), 17,9 s (H8_N37) e 30,0 s (N49, sempre
+no limite). Os métodos do GLAH-R e o Min-Max ficam abaixo de 4 s nesses mesmos arquivos.
+
+### 9.4 Limitações desta execução
+
+- **Uma única máquina e um único orçamento.** Os tempos são de relógio, e um orçamento
+  diferente muda quantas instâncias o A* consegue provar.
+- **Referência fraca no N49.** Sem ótimo provado, o gap é medido contra o melhor valor
+  encontrado, que pode estar acima do ótimo real.
+- **Sem variação entre execuções.** Todos os métodos são determinísticos, então cada um foi
+  executado uma vez por instância.
 
 ## 10. Limitações e observações
 
