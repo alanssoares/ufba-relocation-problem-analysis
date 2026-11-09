@@ -1,0 +1,5 @@
+__pycache__/
+*.pyc
+.claude/
+brp_study/results_ci/
+brp_study/run_log.txt

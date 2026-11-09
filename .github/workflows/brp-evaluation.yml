@@ -1,0 +1,83 @@
+name: BRP evaluation
+
+# Executa a comparação Min-Max x A* x GLAH-R sobre o pacote de instâncias
+# e publica a tabela de resultados no resumo da execução (aba "Summary").
+#
+# Execução manual: Actions > "BRP evaluation" > Run workflow.
+# Os valores padrão são uma demo rápida (arquivos W5, orçamento de 30 s).
+# Para a bateria completa, use only = vazio (todos os 17 arquivos).
+
+on:
+  workflow_dispatch:
+    inputs:
+      only:
+        description: 'Filtro por nome de arquivo (substring), ex.: W5_H5, W7, vazio = todos'
+        required: false
+        default: 'W5'
+        type: string
+      time_limit:
+        description: 'Orçamento de tempo em segundos por instância e método (mesmo para todos)'
+        required: false
+        default: '30'
+        type: string
+      depths:
+        description: 'Profundidades D do look-ahead do GLAH-R, separadas por espaço'
+        required: false
+        default: '3 4'
+        type: string
+permissions:
+  contents: read
+
+jobs:
+  evaluate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    env:
+      ONLY: ${{ inputs.only }}
+      TIME_LIMIT: ${{ inputs.time_limit }}
+      DEPTHS: ${{ inputs.depths }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+
+      - name: Testes unitários
+        run: python -m unittest discover -s brp_study -v
+
+      - name: Executar comparação
+        run: |
+          mkdir -p brp_study/results_ci
+          python -u brp_study/run_experiments.py \
+            --only "$ONLY" \
+            --time-limit "$TIME_LIMIT" \
+            --depths $DEPTHS \
+            --out-dir brp_study/results_ci | tee brp_study/results_ci/run_log.txt
+
+      - name: Publicar tabela no resumo da execução
+        if: always()
+        run: |
+          {
+            echo "## Parâmetros"
+            echo ""
+            echo "| Parâmetro | Valor |"
+            echo "|---|---|"
+            echo "| Arquivos (filtro) | \`${ONLY:-todos}\` |"
+            echo "| Orçamento por instância (s) | $TIME_LIMIT |"
+            echo "| Profundidades GLAH-R (D) | $DEPTHS |"
+            echo ""
+            if [ -f brp_study/results_ci/summary.md ]; then
+              sed 's/^# /## /' brp_study/results_ci/summary.md
+            else
+              echo "**A execução não gerou o resumo.** Veja o log do passo anterior."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Enviar resultados como artefato
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: brp-results-${{ github.run_id }}
+          path: brp_study/results_ci/
+          if-no-files-found: warn
