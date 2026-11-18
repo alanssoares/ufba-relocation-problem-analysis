@@ -1,5 +1,7 @@
 # Comparação de heurísticas para o Block Relocation Problem (BRP)
 
+[![Abrir no Colab](https://colab.research.google.com/assets/colab-badge.svg)](https://colab.research.google.com/github/alanssoares/ufba-relocation-problem-analysis/blob/main/notebooks/brp_demo.ipynb)
+
 Implementação e comparação experimental de métodos para o Block Relocation Problem (BRP), nas
 variantes restrita e irrestrita:
 
@@ -12,6 +14,10 @@ variantes restrita e irrestrita:
 
 **Acesso rápido:**
 
+- [Demonstração no Google Colab](https://colab.research.google.com/github/alanssoares/ufba-relocation-problem-analysis/blob/main/notebooks/brp_demo.ipynb):
+  roda os testes, resolve qualquer instância nas duas variantes, mostra a solução passo a passo e
+  aceita uma instância digitada na hora. Não precisa instalar nada.
+  O notebook está em [`notebooks/brp_demo.ipynb`](notebooks/brp_demo.ipynb).
 - [Achados dos resultados e roteiro para a apresentação](brp_study/ACHADOS.md)
 - [Resultados da variante restrita](brp_study/results/summary.md) ·
   [Resultados da variante irrestrita](brp_study/results/summary_unrestricted.md)
@@ -65,6 +71,8 @@ repositório.
 | [`brp_study/test_brp.py`](brp_study/test_brp.py) | Testes unitários: regras do verificador, A* contra BFS em casos pequenos, validade das soluções do GLAH-R, integridade dos dados |
 | [`brp_study/brp_unrestricted.py`](brp_study/brp_unrestricted.py) | Variante irrestrita: limite inferior do artigo, BFS, A\*-U e GLAH-U (seção 11) |
 | [`brp_study/test_brp_unrestricted.py`](brp_study/test_brp_unrestricted.py) | Testes da variante irrestrita: verificador, limite inferior, A\*-U contra BFS, casos do nível inferior, categorias de relocação, GLAH-U |
+| [`brp_study/demo.py`](brp_study/demo.py), [`brp_study/test_demo.py`](brp_study/test_demo.py) | Funções de apoio para demonstrações (desenho do pátio, solução passo a passo, comparação de todos os métodos numa instância) e seus testes |
+| [`notebooks/brp_demo.ipynb`](notebooks/brp_demo.ipynb) | Notebook de demonstração para o Google Colab |
 | `README.md` | Este documento |
 | [`brp_study/ACHADOS.md`](brp_study/ACHADOS.md) | Achados dos resultados das duas variantes, com tabelas, exemplo ilustrado e roteiro para a apresentação |
 | [`brp_study/results/results_long.csv`](brp_study/results/results_long.csv) | Uma linha por par (instância, método), com a sequência completa de relocações |

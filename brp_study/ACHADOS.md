@@ -299,7 +299,7 @@ especial para N43 e N49.
 ## 10. Como regenerar os dados
 
 ```powershell
-python -m unittest discover -s brp_study -v                     # testes (31)
+python -m unittest discover -s brp_study -v                     # testes (35)
 python brp_study\run_experiments.py                              # restrito (~17 min)
 python brp_study\run_experiments.py --variant unrestricted       # irrestrito (~34 min)
 ```
