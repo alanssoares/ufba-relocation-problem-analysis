@@ -1,11 +1,23 @@
 # Comparação de heurísticas para o Block Relocation Problem (BRP)
 
-Implementação e comparação experimental de três métodos para o Block Relocation Problem (BRP):
+Implementação e comparação experimental de métodos para o Block Relocation Problem (BRP), nas
+variantes restrita e irrestrita:
 
 1. **Min-Max** (Caserta, Voß & Sniedovich, 2012): heurística construtiva de referência.
-2. **A\*** (exato): busca com garantia de otimalidade, usada como referência.
+2. **A\*** (exato): busca com garantia de otimalidade, usada como referência na variante restrita.
 3. **GLAH-R**: heurística gulosa com *look-ahead* (busca em árvore limitada), adaptada da
    proposta de Jin, Zhu & Lim (2015) para a variante restrita do BRP.
+4. **GLAH-U**: a mesma heurística, como publicada no artigo, na variante irrestrita.
+5. **A\*-U** (exato): referência exata da variante irrestrita.
+
+**Acesso rápido:**
+
+- [Achados dos resultados e roteiro para a apresentação](brp_study/ACHADOS.md)
+- [Resultados da variante restrita](brp_study/results/summary.md) ·
+  [Resultados da variante irrestrita](brp_study/results/summary_unrestricted.md)
+- [Instâncias e regras da disciplina](data/instances/LEIAME.md)
+- [Código](brp_study/): [`brp.py`](brp_study/brp.py) (variante restrita) e
+  [`brp_unrestricted.py`](brp_study/brp_unrestricted.py) (variante irrestrita)
 
 Artigo de referência (arquivo em `artigos/`):
 
@@ -43,18 +55,25 @@ com espaço para a relocação.
 
 ## 2. Estrutura do projeto
 
+Todo o código fica em [`brp_study/`](brp_study/). Os caminhos abaixo são relativos à raiz do
+repositório.
+
 | Arquivo | Conteúdo |
 |---|---|
-| `brp.py` | Modelo do problema, verificador independente, Min-Max, A*, GLAH-R, condensação e busca em largura (BFS) de referência |
-| `run_experiments.py` | Executa a comparação em todos os arquivos de instâncias, verifica as soluções e grava os resultados |
-| `test_brp.py` | Testes unitários: regras do verificador, A* contra BFS em casos pequenos, validade das soluções do GLAH-R, integridade dos dados |
-| `brp_unrestricted.py` | Variante irrestrita: limite inferior do artigo, BFS, A\*-U e GLAH-U (seção 11) |
-| `test_brp_unrestricted.py` | Testes da variante irrestrita: verificador, limite inferior, A\*-U contra BFS, casos do nível inferior, categorias de relocação, GLAH-U |
+| [`brp_study/brp.py`](brp_study/brp.py) | Modelo do problema, verificador independente, Min-Max, A*, GLAH-R, condensação e busca em largura (BFS) de referência |
+| [`brp_study/run_experiments.py`](brp_study/run_experiments.py) | Executa a comparação em todos os arquivos de instâncias, verifica as soluções e grava os resultados |
+| [`brp_study/test_brp.py`](brp_study/test_brp.py) | Testes unitários: regras do verificador, A* contra BFS em casos pequenos, validade das soluções do GLAH-R, integridade dos dados |
+| [`brp_study/brp_unrestricted.py`](brp_study/brp_unrestricted.py) | Variante irrestrita: limite inferior do artigo, BFS, A\*-U e GLAH-U (seção 11) |
+| [`brp_study/test_brp_unrestricted.py`](brp_study/test_brp_unrestricted.py) | Testes da variante irrestrita: verificador, limite inferior, A\*-U contra BFS, casos do nível inferior, categorias de relocação, GLAH-U |
 | `README.md` | Este documento |
-| `results/results_long.csv` | Uma linha por par (instância, método), com a sequência completa de relocações |
-| `results/summary.md` | Tabelas gerais e por arquivo, geradas pelo script |
-| `results/unrestricted_long.csv`, `results/summary_unrestricted.md` | O mesmo para a variante irrestrita, mais a comparação com a restrita |
-| `run_log.txt`, `run_log_unrestricted.txt` | Saída local das execuções completas (não versionada, ver `.gitignore`) |
+| [`brp_study/ACHADOS.md`](brp_study/ACHADOS.md) | Achados dos resultados das duas variantes, com tabelas, exemplo ilustrado e roteiro para a apresentação |
+| [`brp_study/results/results_long.csv`](brp_study/results/results_long.csv) | Uma linha por par (instância, método), com a sequência completa de relocações |
+| [`brp_study/results/summary.md`](brp_study/results/summary.md) | Tabelas gerais e por arquivo, geradas pelo script |
+| [`brp_study/results/unrestricted_long.csv`](brp_study/results/unrestricted_long.csv), [`brp_study/results/summary_unrestricted.md`](brp_study/results/summary_unrestricted.md) | O mesmo para a variante irrestrita, mais a comparação com a restrita |
+| `brp_study/run_log.txt`, `brp_study/run_log_unrestricted.txt` | Saída local das execuções completas (não versionada, ver `.gitignore`) |
+| [`data/instances/`](data/instances/) | As 17 instâncias da disciplina e o [`LEIAME.md`](data/instances/LEIAME.md) com as regras |
+| `artigos/` | PDF do artigo de referência (não versionado) |
+| [`.github/workflows/brp-evaluation.yml`](.github/workflows/brp-evaluation.yml) | Execução manual da comparação no GitHub Actions |
 
 ## 3. Mecânica comum (`brp.py`)
 
@@ -234,7 +253,7 @@ print(verify(inst, [(3, 2), (3, 2), (3, 1)]))   # formato de exemplo do LEIAME.m
 Execução completa: 170 instâncias (17 arquivos), 4 métodos, orçamento de 30 s por instância e
 método, em uma máquina Windows com Python 3.13. Resultado: **680 linhas, todas as soluções
 verificadas** (0 falhas). Tempo total de execução: cerca de 17 minutos. Os valores completos
-estão em `results/summary.md` e `results/results_long.csv`.
+estão em [`brp_study/results/summary.md`](brp_study/results/summary.md) e `brp_study/results/results_long.csv`.
 
 ### 9.1 Resumo geral
 
@@ -433,7 +452,7 @@ não puderam ser transcritas automaticamente como testes.
 Execução completa: 170 instâncias, 4 métodos, orçamento de 30 s por instância e método, na mesma
 máquina da seção 9. Resultado: **680 linhas, todas as soluções verificadas** com as regras
 irrestritas. Tempo total: cerca de 34 minutos. Os valores completos estão em
-`results/summary_unrestricted.md` e `results/unrestricted_long.csv`.
+[`brp_study/results/summary_unrestricted.md`](brp_study/results/summary_unrestricted.md) e `brp_study/results/unrestricted_long.csv`.
 
 | Método | Soluções verificadas | Gap médio (%) | Gap máximo (%) | Igual a Z\*_U | Melhor que Min-Max | Tempo médio (s) | Tempo máximo (s) | Timeouts |
 |---|---|---|---|---|---|---|---|---|
@@ -454,7 +473,7 @@ duas variantes, mas o gap dele cresce aqui porque a referência Z\*_U é menor.
 | Ótimos provados nas duas variantes (127) | — | — | 0,61 | — | 48 |
 
 Por arquivo, o ganho vai de 0% (`W7_H5_N16`) a cerca de 10–11% (`W7_H5_N31`, `W7_H7_N32`), e
-cresce com a ocupação do pátio. A tabela completa está em `results/summary_unrestricted.md`.
+cresce com a ocupação do pátio. A tabela completa está em [`brp_study/results/summary_unrestricted.md`](brp_study/results/summary_unrestricted.md).
 
 **Principais observações:**
 
