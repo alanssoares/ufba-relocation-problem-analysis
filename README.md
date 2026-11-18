@@ -18,6 +18,9 @@ variantes restrita e irrestrita:
   roda os testes, resolve qualquer instância nas duas variantes, mostra a solução passo a passo e
   aceita uma instância digitada na hora. Não precisa instalar nada.
   O notebook está em [`notebooks/brp_demo.ipynb`](notebooks/brp_demo.ipynb).
+- [Visualização animada](visual/brp_visual.html): uma página HTML que reproduz, lado a lado, a
+  solução de cada método em qualquer uma das 170 instâncias. Baixe o arquivo e abra no navegador;
+  ele não precisa de servidor nem de internet (seção 8.1).
 - [Achados dos resultados e roteiro para a apresentação](brp_study/ACHADOS.md)
 - [Resultados da variante restrita](brp_study/results/summary.md) ·
   [Resultados da variante irrestrita](brp_study/results/summary_unrestricted.md)
@@ -73,6 +76,8 @@ repositório.
 | [`brp_study/test_brp_unrestricted.py`](brp_study/test_brp_unrestricted.py) | Testes da variante irrestrita: verificador, limite inferior, A\*-U contra BFS, casos do nível inferior, categorias de relocação, GLAH-U |
 | [`brp_study/demo.py`](brp_study/demo.py), [`brp_study/test_demo.py`](brp_study/test_demo.py) | Funções de apoio para demonstrações (desenho do pátio, solução passo a passo, comparação de todos os métodos numa instância) e seus testes |
 | [`notebooks/brp_demo.ipynb`](notebooks/brp_demo.ipynb) | Notebook de demonstração para o Google Colab |
+| [`brp_study/make_visual.py`](brp_study/make_visual.py), [`brp_study/visual_template.html`](brp_study/visual_template.html) | Gerador da visualização animada e o modelo da página |
+| [`visual/brp_visual.html`](visual/brp_visual.html) | Visualização animada gerada: um arquivo só, sem dependências (seção 8.1) |
 | `README.md` | Este documento |
 | [`brp_study/ACHADOS.md`](brp_study/ACHADOS.md) | Achados dos resultados das duas variantes, com tabelas, exemplo ilustrado e roteiro para a apresentação |
 | [`brp_study/results/results_long.csv`](brp_study/results/results_long.csv) | Uma linha por par (instância, método), com a sequência completa de relocações |
@@ -254,6 +259,73 @@ from pathlib import Path
 
 inst = load_instances(Path("data/instances/brp_W3_H4_N8.json"))[0]
 print(verify(inst, [(3, 2), (3, 2), (3, 1)]))   # formato de exemplo do LEIAME.md
+```
+
+### 8.1 Visualização animada
+
+[`visual/brp_visual.html`](visual/brp_visual.html) é uma página única, com todos os dados embutidos.
+Ela abre direto no navegador com dois cliques, sem servidor, framework ou internet.
+
+**Painéis.** São sete painéis, um por método, e todos avançam juntos, um movimento por vez:
+
+| Variante | Métodos |
+|---|---|
+| Restrita | Min-Max, A\*, GLAH-R (D=3), GLAH-R (D=4) |
+| Irrestrita | GLAH-U (D=3), GLAH-U (D=4), A\*-U |
+
+**Elementos visuais:**
+- **Cores:** cada contêiner tem a cor da sua ordem de retirada, do vermelho (sai primeiro) ao azul
+  (sai por último).
+- **Alvo atual:** aparece com contorno.
+- **Contêiner recém-movido:** fica destacado em **azul** quando estava acima do alvo, e em
+  **laranja** quando o movimento foi antecipado, o que só acontece no irrestrito.
+- **Retirada:** os contêineres retirados sobem e somem.
+- **Melhor resultado:** ao fim, o painel com o menor número de movimentos de cada variante fica
+  com borda verde.
+
+**Rodapé de cada painel:** status (ótimo provado, heurística ou tempo esgotado), verificação,
+tempo e gap. Quando um método exato esgotou o tempo, o painel mostra o limite inferior provado.
+
+**Controles:**
+
+| Controle | Função |
+|---|---|
+| Listas "Destaques", "Arquivo" e "Id" | Escolher a instância |
+| ⏮ ◀ ▶ ⏭ | Ir ao início, voltar, avançar, ir ao fim |
+| Play e velocidade | Reprodução automática |
+| ◐ Tema | Alternar entre claro e escuro |
+| Clique num painel | Ampliar o painel |
+
+**Atalhos de teclado:** `espaço` (play), `←` e `→` (passo), `Home` e `End` (início e fim),
+`T` (tema) e `Esc` (fechar o painel ampliado).
+
+**A lista de destaques** traz seis casos prontos para mostrar em sala:
+- o exemplo do `LEIAME.md`;
+- o exemplo do `ACHADOS.md` (5 contra 4 movimentos);
+- o maior ganho provado do irrestrito;
+- o pior caso do GLAH-U;
+- o maior arquivo do conjunto A;
+- a maior instância.
+
+**Abrir num estado específico pela URL,** útil para deixar preparado antes da aula:
+`brp_visual.html?i=brp_W7_H5_N31.json%2310&t=end&theme=light&focus=A*-U`.
+
+| Parâmetro | Valor |
+|---|---|
+| `i` | `arquivo#id`, com `#` escrito como `%23` |
+| `t` | `end` ou um passo em meio-movimentos: os ímpares são o estado depois das retiradas |
+| `theme` | `light` ou `dark` |
+| `focus` | nome do método a ampliar |
+
+**De onde vêm as soluções.** São as das execuções completas, lidas de `results_long.csv` e
+`unrestricted_long.csv`. O gerador verifica cada solução de novo antes de embuti-la na página. A
+exceção é o exemplo do `LEIAME.md`, que é resolvido na hora.
+
+Para regenerar a página depois de novos experimentos, ou para incluir instâncias digitadas:
+
+```powershell
+python brp_study\make_visual.py
+python brp_study\make_visual.py --custom "[[2,5,1],[4],[3]]:4"   # adiciona uma instância própria
 ```
 
 ## 9. Resultados
