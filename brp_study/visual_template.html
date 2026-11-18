@@ -1,0 +1,427 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BRP: execução dos métodos</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --panel: #ffffff; --ink: #1d2330; --muted: #5d6678; --line: #d9dde5;
+    --accent: #2f6fdb; --good: #1f8a4c; --warn: #c26a00; --bad: #b3261e;
+    --block-txt: #ffffff; --ground: #8a93a6; --target: #111111; --cap: #b8bfcc;
+    --tag-block: #2f6fdb; --tag-antic: #d9480f;
+    --shadow: 0 1px 2px rgba(0,0,0,.06), 0 2px 8px rgba(0,0,0,.05);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #12151b; --panel: #1b2029; --ink: #e8ebf1; --muted: #a2abbd; --line: #2c3340;
+      --accent: #6d9cf0; --good: #4cc27f; --warn: #f0a640; --bad: #ef6b62;
+      --ground: #6b7384; --target: #ffffff; --cap: #444c5c;
+      --tag-block: #6d9cf0; --tag-antic: #ff8a4c;
+      --shadow: none;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #12151b; --panel: #1b2029; --ink: #e8ebf1; --muted: #a2abbd; --line: #2c3340;
+    --accent: #6d9cf0; --good: #4cc27f; --warn: #f0a640; --bad: #ef6b62;
+    --ground: #6b7384; --target: #ffffff; --cap: #444c5c;
+    --tag-block: #6d9cf0; --tag-antic: #ff8a4c;
+    --shadow: none;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: var(--bg); color: var(--ink);
+    font: 16px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  header { padding: 14px 20px 8px; display: flex; flex-wrap: wrap; gap: 10px 24px; align-items: baseline; }
+  h1 { font-size: 22px; margin: 0; letter-spacing: -.01em; }
+  .sub { color: var(--muted); font-size: 14px; }
+  .bar { display: flex; flex-wrap: wrap; gap: 10px 14px; align-items: center;
+    padding: 10px 20px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line);
+    background: var(--panel); position: sticky; top: 0; z-index: 5; }
+  .bar label { font-size: 13px; color: var(--muted); display: flex; gap: 6px; align-items: center; }
+  select, button, input[type=range] { font: inherit; }
+  #sel-hl { max-width: 330px; }
+  select { padding: 5px 8px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); max-width: 100%; }
+  button { padding: 6px 12px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg);
+    color: var(--ink); cursor: pointer; min-width: 40px; }
+  button:hover { border-color: var(--accent); }
+  button.primary { background: var(--accent); color: #fff; border-color: var(--accent); min-width: 92px; }
+  .group { display: flex; gap: 6px; align-items: center; }
+  .step { font-variant-numeric: tabular-nums; font-weight: 600; min-width: 150px; }
+  .info { padding: 10px 20px 0; display: flex; flex-wrap: wrap; gap: 8px 22px; color: var(--muted); font-size: 14px; }
+  .info b { color: var(--ink); }
+  .note { padding: 4px 20px 0; font-size: 14px; color: var(--ink); min-height: 1.4em; }
+  main { padding: 12px 20px 24px; }
+  .row-title { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); margin: 14px 2px 8px; }
+  .row-title b { color: var(--ink); }
+  .grid { display: grid; gap: 14px; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 12px;
+    box-shadow: var(--shadow); cursor: zoom-in; display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+  .card.best { border-color: var(--good); box-shadow: 0 0 0 2px color-mix(in srgb, var(--good) 35%, transparent); }
+  .card-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; }
+  .card-head h3 { margin: 0; font-size: 16px; }
+  .count { font-variant-numeric: tabular-nums; font-size: 14px; color: var(--muted); white-space: nowrap; }
+  .count b { color: var(--ink); font-size: 18px; }
+  .yard-wrap { position: relative; width: 100%; }
+  .yard { position: relative; width: 100%; container-type: size; }
+  .cap { position: absolute; left: 0; right: 0; top: 0; border-top: 1px dashed var(--cap); }
+  .ground { position: absolute; left: 0; right: 0; bottom: 0; border-bottom: 3px solid var(--ground); }
+  .blk { position: absolute; display: flex; align-items: center; justify-content: center;
+    transition: left var(--dur) ease, bottom var(--dur) ease, opacity var(--dur) ease, transform var(--dur) ease;
+    padding: 2%; }
+  .blk > span { width: 100%; height: 100%; border-radius: 6px; display: flex; align-items: center; justify-content: center;
+    color: var(--block-txt); font-weight: 700; font-variant-numeric: tabular-nums;
+    font-size: min(calc(var(--cell-h) * 0.48), calc(var(--cell-w) * 0.42));
+    text-shadow: 0 1px 1px rgba(0,0,0,.35); }
+  .blk.target > span { outline: 3px solid var(--target); outline-offset: 1px; }
+  .blk.moved > span { box-shadow: 0 0 0 4px var(--move-color, var(--tag-block)); }
+  .blk.gone { opacity: 0; transform: translateY(-70%) scale(.85); pointer-events: none; }
+  .labels { display: grid; text-align: center; font-size: 12px; color: var(--muted); margin-top: 3px; }
+  .last { font-size: 13px; min-height: 2.6em; color: var(--muted); }
+  .tag { display: inline-block; padding: 0 6px; border-radius: 999px; font-size: 12px; font-weight: 600; color: #fff; }
+  .tag.block { background: var(--tag-block); } .tag.antic { background: var(--tag-antic); }
+  .foot { display: flex; flex-wrap: wrap; gap: 6px; font-size: 12px; }
+  .pill { padding: 1px 8px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); }
+  .pill.ok { color: var(--good); border-color: var(--good); }
+  .pill.warn { color: var(--warn); border-color: var(--warn); }
+  .pill.bad { color: var(--bad); border-color: var(--bad); }
+  .empty { display: flex; align-items: center; justify-content: center; text-align: center; color: var(--muted);
+    font-size: 14px; border: 1px dashed var(--line); border-radius: 8px; padding: 12px; }
+  .legend { padding: 4px 20px 18px; color: var(--muted); font-size: 13px; display: flex; flex-wrap: wrap; gap: 6px 18px; align-items: center; }
+  .sw { display: inline-block; width: 14px; height: 14px; border-radius: 3px; vertical-align: -2px; margin-right: 4px; }
+  .grad { width: 80px; background: linear-gradient(90deg, hsl(0 70% 50%), hsl(110 55% 42%), hsl(220 70% 52%)); }
+  /* focus mode */
+  .overlay { position: fixed; inset: 0; background: color-mix(in srgb, var(--bg) 88%, transparent); z-index: 20;
+    display: none; align-items: center; justify-content: center; padding: 3vh 3vw; }
+  .overlay.on { display: flex; }
+  .overlay .card { width: min(1100px, 100%); max-height: 94vh; cursor: zoom-out; }
+  .overlay .card-head h3 { font-size: 22px; } .overlay .last { font-size: 16px; }
+  kbd { border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px; padding: 0 4px; font-size: 12px; }
+  @media (max-width: 600px) { header, .bar, .info, .note, main, .legend { padding-left: 16px; padding-right: 16px; } .step { min-width: 0; } }
+</style>
+</head>
+<body>
+<header>
+  <h1>Block Relocation Problem: execução dos métodos</h1>
+  <span class="sub">Cada painel reproduz a solução de um método, com todos os painéis avançando juntos, um movimento por vez.</span>
+</header>
+
+<div class="bar">
+  <label>Destaques <select id="sel-hl"></select></label>
+  <label>Arquivo <select id="sel-file"></select></label>
+  <label>Id <select id="sel-id"></select></label>
+  <span class="group">
+    <button id="b-reset" title="Início (Home)">⏮</button>
+    <button id="b-prev" title="Passo anterior (←)">◀</button>
+    <button id="b-play" class="primary" title="Reproduzir / pausar (espaço)">▶ Play</button>
+    <button id="b-next" title="Próximo passo (→)">▶</button>
+    <button id="b-end" title="Fim (End)">⏭</button>
+  </span>
+  <label>Velocidade <input id="speed" type="range" min="0" max="100" value="55"></label>
+  <span class="step" id="step"></span>
+  <button id="b-theme" title="Alternar tema claro/escuro (T)">◐ Tema</button>
+</div>
+
+<div class="info" id="info"></div>
+<div class="note" id="note"></div>
+
+<main>
+  <div class="row-title"><b>Variante restrita</b>: só os contêineres acima do alvo atual podem ser movidos</div>
+  <div class="grid" id="grid-r"></div>
+  <div class="row-title"><b>Variante irrestrita</b>: qualquer topo pode ser movido, inclusive de forma antecipada</div>
+  <div class="grid" id="grid-u"></div>
+</main>
+
+<div class="legend">
+  <span><span class="sw grad"></span>número = ordem de retirada (1 sai primeiro)</span>
+  <span><span class="sw" style="outline:3px solid var(--target);background:transparent"></span>alvo atual</span>
+  <span><span class="tag block">bloqueia o alvo</span> movimento de um contêiner acima do alvo</span>
+  <span><span class="tag antic">antecipado</span> movimento de outro contêiner (só no irrestrito)</span>
+  <span>linha tracejada = altura máxima H</span>
+  <span>clique num painel para ampliar · <kbd>espaço</kbd> play · <kbd>←</kbd> <kbd>→</kbd> passo · <kbd>Esc</kbd> fecha</span>
+</div>
+
+<div class="overlay" id="overlay"></div>
+
+<script>
+const DATA = __DATA__;
+
+// ---------- simulation (same rules as brp.py: free automatic retrievals) ----------
+function minAll(st) { let m = Infinity; for (const s of st) for (const c of s) if (c < m) m = c; return m; }
+function retrieve(st) {
+  const gone = [];
+  for (;;) {
+    const t = minAll(st); if (t === Infinity) break;
+    const s = st.find(s => s.length && s[s.length - 1] === t);
+    if (!s) break; s.pop(); gone.push(t);
+  }
+  return gone;
+}
+function timeline(stacks, moves) {
+  const st = stacks.map(s => s.slice());
+  const snaps = [];
+  const snap = info => snaps.push(Object.assign({ stacks: st.map(s => s.slice()) }, info));
+  snap({ k: 0, phase: "init" });
+  snap({ k: 0, phase: "retr", gone: retrieve(st) });
+  moves.forEach(([a, b], i) => {
+    const target = minAll(st);
+    const c = st[a - 1].pop();
+    const kind = st[a - 1].includes(target) ? "block" : "antic";
+    st[b - 1].push(c);
+    const mv = { k: i + 1, c, a, b, kind, target };
+    snap(Object.assign({ phase: "move" }, mv));
+    snap(Object.assign({ phase: "retr", gone: retrieve(st) }, mv));
+  });
+  return snaps;
+}
+
+// ---------- state ----------
+let inst = null, cards = [], T = 0, t = 0, timer = null, focusIdx = -1;
+const $ = id => document.getElementById(id);
+const fmt = (x, d = 2) => Number(x).toFixed(d).replace(".", ",");
+// label 1 (leaves first) = red ... label N (leaves last) = blue.
+// Yellow-green hues are darkened so the white label keeps enough contrast.
+const color = (c, N) => {
+  const h = N > 1 ? Math.round(220 * (c - 1) / (N - 1)) : 0;
+  const l = h >= 35 && h <= 150 ? 36 : 46;
+  return `hsl(${h} 70% ${l}%)`;
+};
+function halfStepMs() { const v = +$("speed").value; return Math.round(1400 - 12.5 * v); } // 1400 .. 150 ms
+
+// ---------- building the panels ----------
+function buildCard(m, i) {
+  const el = document.createElement("div");
+  el.className = "card";
+  el.innerHTML = `
+    <div class="card-head"><h3>${m.name}</h3><span class="count"></span></div>
+    <div class="yard-wrap"></div>
+    <div class="last"></div>
+    <div class="foot"></div>`;
+  el.addEventListener("click", () => toggleFocus(i));
+  const wrap = el.querySelector(".yard-wrap");
+  const c = { m, el, wrap, snaps: m.moves ? timeline(inst.stacks, m.moves) : null, blocks: new Map() };
+  if (!c.snaps) {
+    wrap.innerHTML = `<div class="empty">Sem solução dentro do limite de tempo.<br>` +
+      (m.lb != null ? `Limite inferior provado: ≥ ${m.lb} movimentos.` : "") + `</div>`;
+  } else {
+    drawYard(c, wrap);
+  }
+  // footer pills
+  const pills = [];
+  if (m.status === "optimal") pills.push(`<span class="pill ok">ótimo provado</span>`);
+  else if (m.status === "timeout") pills.push(`<span class="pill warn">tempo esgotado</span>`);
+  else pills.push(`<span class="pill">heurística</span>`);
+  if (m.moves) pills.push(`<span class="pill ${m.verified ? "ok" : "bad"}">${m.verified ? "verificada" : "NÃO verificada"}</span>`);
+  if (m.time != null) pills.push(`<span class="pill">${fmt(m.time, m.time < 1 ? 3 : 1)} s</span>`);
+  const ref = m.variant === "R" ? inst.zr : inst.zu;
+  if (m.moves && ref != null && ref > 0) {
+    const gap = 100 * (m.moves.length - ref) / ref;
+    pills.push(`<span class="pill ${gap === 0 ? "ok" : "warn"}">gap ${fmt(gap, 1)}%</span>`);
+  }
+  el.querySelector(".foot").innerHTML = pills.join("");
+  return c;
+}
+
+function drawYard(c, wrap) {
+  const { W, H, N } = inst;
+  wrap.innerHTML = `<div class="yard"><div class="cap"></div><div class="ground"></div></div>
+    <div class="labels" style="grid-template-columns:repeat(${W},1fr)">${
+      Array.from({ length: W }, (_, i) => `<span>P${i + 1}</span>`).join("")}</div>`;
+  const yard = wrap.querySelector(".yard");
+  c.yard = yard;
+  yard.style.aspectRatio = `${W} / ${Math.max(H, 2) * 0.82}`;
+  for (const s of inst.stacks) for (const lab of s) {
+    const b = document.createElement("div");
+    b.className = "blk";
+    b.style.width = `${100 / W}%`;
+    b.style.height = `${100 / H}%`;
+    b.innerHTML = `<span style="background:${color(lab, N)}">${lab}</span>`;
+    yard.appendChild(b);
+    c.blocks.set(lab, b);
+  }
+  sizeFont(c);
+}
+function sizeFont(c) {
+  if (!c.yard) return;
+  const r = c.yard.getBoundingClientRect();
+  c.yard.style.setProperty("--cell-w", `${r.width / inst.W}px`);
+  c.yard.style.setProperty("--cell-h", `${r.height / inst.H}px`);
+}
+
+// ---------- rendering one global time t ----------
+function render() {
+  const dur = Math.min(halfStepMs() * 0.85, 600);
+  document.documentElement.style.setProperty("--dur", `${dur}ms`);
+  const maxK = (T - 1) / 2;
+  const k = t <= 1 ? 0 : Math.ceil((t - 1) / 2);
+  $("step").textContent = t === 0 ? "Configuração inicial" : `Movimento ${k} de ${maxK}`;
+  $("b-play").textContent = timer ? "⏸ Pausar" : "▶ Play";
+  for (const c of cards) renderCard(c);
+  markBest();
+  renderFocus();
+}
+
+function renderCard(c) {
+  const count = c.el.querySelector(".count");
+  const last = c.el.querySelector(".last");
+  if (!c.snaps) { count.innerHTML = `<b>–</b>`; last.textContent = ""; return; }
+  const total = c.m.moves.length;
+  const s = c.snaps[Math.min(t, c.snaps.length - 1)];
+  const done = t >= c.snaps.length - 1;
+  count.innerHTML = `<b>${s.k}</b> / ${total} mov.`;
+  const present = new Set();
+  const target = minAll(s.stacks);
+  s.stacks.forEach((st, si) => st.forEach((lab, lv) => {
+    present.add(lab);
+    const b = c.blocks.get(lab);
+    b.style.left = `${si * 100 / inst.W}%`;
+    b.style.bottom = `${lv * 100 / inst.H}%`;
+    b.classList.remove("gone");
+    b.classList.toggle("target", lab === target);
+    const moved = s.c === lab && s.phase !== "init" && s.k > 0;
+    b.classList.toggle("moved", moved);
+    b.style.setProperty("--move-color", s.kind === "antic" ? "var(--tag-antic)" : "var(--tag-block)");
+  }));
+  for (const [lab, b] of c.blocks) if (!present.has(lab)) { b.classList.add("gone"); b.classList.remove("target", "moved"); }
+  // description of the last move
+  if (s.k === 0) {
+    const g = s.gone && s.gone.length ? `Saem logo de início: ${s.gone.join(", ")}.` : "";
+    last.innerHTML = t === 0 ? "Configuração inicial." : (g || "Nenhum contêiner sai sem relocação.");
+  } else {
+    const tag = s.kind === "antic" ? `<span class="tag antic">antecipado</span>` : `<span class="tag block">bloqueia o alvo</span>`;
+    const g = s.phase === "retr" && s.gone && s.gone.length ? ` · saem: ${s.gone.join(", ")}` : "";
+    last.innerHTML = `${s.k}. contêiner <b>${s.c}</b>: P${s.a} → P${s.b} ${tag}${g}`;
+  }
+  if (done) last.innerHTML += `<br><b>Concluído em ${total} movimentos.</b>`;
+}
+
+function markBest() {
+  for (const v of ["R", "U"]) {
+    const done = cards.filter(c => c.m.variant === v && c.snaps && t >= c.snaps.length - 1);
+    const all = cards.filter(c => c.m.variant === v && c.snaps);
+    const finished = done.length === all.length && all.length > 0;
+    const best = finished ? Math.min(...all.map(c => c.m.moves.length)) : null;
+    for (const c of cards.filter(c => c.m.variant === v))
+      c.el.classList.toggle("best", finished && c.snaps && c.m.moves.length === best);
+  }
+}
+
+// ---------- instance loading ----------
+function loadInstance(key) {
+  stop();
+  inst = DATA.instances.find(x => x.key === key);
+  focusIdx = -1; focusCard = null; $("overlay").classList.remove("on"); $("overlay").innerHTML = "";
+  $("grid-r").innerHTML = ""; $("grid-u").innerHTML = "";
+  cards = inst.methods.map((m, i) => buildCard(m, i));
+  cards.forEach(c => (c.m.variant === "R" ? $("grid-r") : $("grid-u")).appendChild(c.el));
+  cards.forEach(sizeFont);
+  const maxMoves = Math.max(0, ...cards.filter(c => c.snaps).map(c => c.m.moves.length));
+  T = 1 + 2 * maxMoves; t = 0;
+  const src = s => s && s.includes("optimum") ? "ótimo provado" : "melhor conhecido";
+  $("info").innerHTML = `<span><b>${inst.label}</b></span><span>W = <b>${inst.W}</b> pilhas</span>` +
+    `<span>H = <b>${inst.H}</b></span><span>N = <b>${inst.N}</b> contêineres</span>` +
+    (inst.zr != null ? `<span>Z*<sub>restrito</sub> = <b>${inst.zr}</b> (${src(inst.zr_src)})</span>` : "") +
+    (inst.zu != null ? `<span>Z*<sub>irrestrito</sub> = <b>${inst.zu}</b> (${src(inst.zu_src)})</span>` : "");
+  $("note").textContent = inst.note || "";
+  syncSelectors();
+  render();
+}
+
+function syncSelectors() {
+  $("sel-file").value = inst.file;
+  fillIds(inst.file);
+  $("sel-id").value = String(inst.id);
+  $("sel-hl").value = DATA.highlights.some(h => h.key === inst.key) ? inst.key : "";
+}
+function fillIds(file) {
+  const ids = DATA.instances.filter(x => x.file === file).map(x => x.id);
+  $("sel-id").innerHTML = ids.map(i => `<option value="${i}">${i}</option>`).join("");
+}
+
+// ---------- focus mode ----------
+function toggleFocus(i) {
+  const ov = $("overlay");
+  if (focusIdx === i || i < 0) { focusIdx = -1; ov.classList.remove("on"); ov.innerHTML = ""; return; }
+  focusIdx = i;
+  ov.innerHTML = "";
+  const m = cards[i].m;
+  const big = buildCard(m, i);
+  big.el.classList.add("big");
+  big.el.addEventListener("click", e => { e.stopPropagation(); toggleFocus(-1); });
+  ov.appendChild(big.el);
+  ov.classList.add("on");
+  // keep the yard inside the viewport
+  if (big.yard) {
+    const maxH = window.innerHeight * 0.62;
+    const ratio = inst.W / (Math.max(inst.H, 2) * 0.82);
+    big.wrap.style.maxWidth = `${Math.min(1060, maxH * ratio)}px`;
+    big.wrap.style.margin = "0 auto";
+  }
+  focusCard = big;
+  sizeFont(big);
+  renderCard(big);
+  ov.onclick = () => toggleFocus(-1);
+}
+let focusCard = null;
+function renderFocus() { if (focusIdx >= 0 && focusCard) renderCard(focusCard); }
+
+// ---------- playback ----------
+function step(d) { t = Math.max(0, Math.min(T, t + d)); render(); }
+function stop() { if (timer) { clearTimeout(timer); timer = null; } }
+function tick() {
+  if (t >= T) { stop(); render(); return; }
+  step(1);
+  timer = setTimeout(tick, halfStepMs());
+}
+function play() {
+  if (timer) { stop(); render(); return; }
+  if (t >= T) t = 0;
+  timer = setTimeout(tick, 0);
+  render();
+}
+
+// ---------- wiring ----------
+(function init() {
+  const files = [...new Set(DATA.instances.map(x => x.file))];
+  $("sel-file").innerHTML = files.map(f => `<option value="${f}">${f.replace(".json", "")}</option>`).join("");
+  $("sel-hl").innerHTML = `<option value="">(escolher)</option>` +
+    DATA.highlights.map(h => `<option value="${h.key}">${h.label}</option>`).join("");
+  $("sel-hl").onchange = e => e.target.value && loadInstance(e.target.value);
+  $("sel-file").onchange = e => { fillIds(e.target.value); loadInstance(`${e.target.value}#${$("sel-id").value}`); };
+  $("sel-id").onchange = e => loadInstance(`${$("sel-file").value}#${e.target.value}`);
+  $("b-play").onclick = play;
+  // t: 0 = initial layout, odd = after a move and its retrievals, even > 0 = right after a move.
+  // The step buttons jump between "after retrievals" states.
+  $("b-prev").onclick = () => { stop(); t = t <= 1 ? 0 : (t % 2 ? t - 2 : t - 1); render(); };
+  $("b-next").onclick = () => { stop(); t = Math.min(T, t === 0 ? 1 : (t % 2 ? t + 2 : t + 1)); render(); };
+  $("b-reset").onclick = () => { stop(); t = 0; render(); };
+  $("b-end").onclick = () => { stop(); t = T; render(); };
+  $("speed").oninput = () => render();
+  const root = document.documentElement;
+  const isDark = () => root.dataset.theme ? root.dataset.theme === "dark"
+    : matchMedia("(prefers-color-scheme: dark)").matches;
+  const setTheme = th => { root.dataset.theme = th; try { localStorage.setItem("brp-theme", th); } catch (e) {} };
+  try { const saved = localStorage.getItem("brp-theme"); if (saved) root.dataset.theme = saved; } catch (e) {}
+  $("b-theme").onclick = () => setTheme(isDark() ? "light" : "dark");
+  document.addEventListener("keydown", e => {
+    if (e.target.tagName === "SELECT") return;
+    if (e.key === " ") { e.preventDefault(); play(); }
+    else if (e.key === "ArrowRight") $("b-next").click();
+    else if (e.key === "ArrowLeft") $("b-prev").click();
+    else if (e.key === "Home") $("b-reset").click();
+    else if (e.key === "End") $("b-end").click();
+    else if (e.key === "Escape") toggleFocus(-1);
+    else if (e.key === "t" || e.key === "T") $("b-theme").click();
+  });
+  window.addEventListener("resize", () => { cards.forEach(sizeFont); if (focusCard) sizeFont(focusCard); });
+  // Optional URL parameters: ?i=<file>%23<id>&t=<step|end>&focus=<method name>
+  const q = new URLSearchParams(location.search);
+  if (q.get("theme") === "light" || q.get("theme") === "dark") root.dataset.theme = q.get("theme");
+  const key = q.get("i");
+  const first = DATA.highlights.length ? DATA.highlights[0].key : DATA.instances[0].key;
+  loadInstance(key && DATA.instances.some(x => x.key === key) ? key : first);
+  if (q.get("t")) { t = q.get("t") === "end" ? T : Math.max(0, Math.min(T, parseInt(q.get("t"), 10) || 0)); render(); }
+  if (q.get("focus")) { const i = cards.findIndex(c => c.m.name === q.get("focus")); if (i >= 0) toggleFocus(i); }
+})();
+</script>
+</body>
+</html>

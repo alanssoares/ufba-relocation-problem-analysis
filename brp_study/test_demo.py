@@ -42,5 +42,20 @@ class DemoTests(unittest.TestCase):
         self.assertIn("Pátio vazio.", text)
 
 
+class VisualPageTests(unittest.TestCase):
+    def test_page_data_is_complete_and_verified(self):
+        from pathlib import Path
+        from make_visual import build, HIGHLIGHTS
+        here = Path(__file__).resolve().parent
+        data = build(here.parent / "data" / "instances", here / "results", [], time_limit=10)
+        self.assertEqual(len(data["instances"]), 171)  # 170 data instances + the LEIAME example
+        self.assertEqual(len(data["highlights"]), len(HIGHLIGHTS))
+        for x in data["instances"]:
+            self.assertEqual(len(x["methods"]), 7, msg=x["key"])
+            for m in x["methods"]:
+                if m["moves"] is not None:
+                    self.assertTrue(m["verified"], msg=f"{x['key']} {m['name']}")
+
+
 if __name__ == "__main__":
     unittest.main()
