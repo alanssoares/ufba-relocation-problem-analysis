@@ -3,3 +3,4 @@ __pycache__/
 .claude/
 brp_study/results_ci/
 brp_study/run_log.txt
+brp_study/run_log_unrestricted.txt

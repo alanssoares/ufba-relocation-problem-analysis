@@ -82,12 +82,14 @@ def _locate(stacks: list[list[int]], label: int) -> int:
     raise KeyError(label)
 
 
-def verify(inst: Instance, moves: list[Move]) -> tuple[bool, str]:
+def verify(inst: Instance, moves: list[Move], restricted: bool = True) -> tuple[bool, str]:
     """Independent feasibility check of a relocation sequence.
 
     Replays the moves from the initial layout and checks, for each relocation:
-    the source is the target's stack, the source is not empty, the destination
-    is a different stack with height < H. At the end the yard must be empty.
+    the source is not empty, the destination is a different stack with height
+    < H, and (restricted variant only) the source is the target's stack.
+    With ``restricted=False`` any top container may be relocated (unrestricted
+    BRP). At the end the yard must be empty.
     """
     stacks = [list(s) for s in inst.stacks]
     _stabilize(stacks)
@@ -99,9 +101,10 @@ def verify(inst: Instance, moves: list[Move]) -> tuple[bool, str]:
         s, d = src - 1, dst - 1
         if not stacks[s]:
             return False, f"move {k}: source stack is empty"
-        target = min(c for st in stacks for c in st)
-        if target not in stacks[s]:
-            return False, f"move {k}: source stack does not hold the current target {target}"
+        if restricted:
+            target = min(c for st in stacks for c in st)
+            if target not in stacks[s]:
+                return False, f"move {k}: source stack does not hold the current target {target}"
         if len(stacks[d]) >= inst.H:
             return False, f"move {k}: destination stack is full (H={inst.H})"
         stacks[d].append(stacks[s].pop())
