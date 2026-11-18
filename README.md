@@ -1,11 +1,23 @@
 # Comparação de heurísticas para o Block Relocation Problem (BRP)
 
-Implementação e comparação experimental de três métodos para o Block Relocation Problem (BRP):
+Implementação e comparação experimental de métodos para o Block Relocation Problem (BRP), nas
+variantes restrita e irrestrita:
 
 1. **Min-Max** (Caserta, Voß & Sniedovich, 2012): heurística construtiva de referência.
-2. **A\*** (exato): busca com garantia de otimalidade, usada como referência.
+2. **A\*** (exato): busca com garantia de otimalidade, usada como referência na variante restrita.
 3. **GLAH-R**: heurística gulosa com *look-ahead* (busca em árvore limitada), adaptada da
    proposta de Jin, Zhu & Lim (2015) para a variante restrita do BRP.
+4. **GLAH-U**: a mesma heurística, como publicada no artigo, na variante irrestrita.
+5. **A\*-U** (exato): referência exata da variante irrestrita.
+
+**Acesso rápido:**
+
+- [Achados dos resultados e roteiro para a apresentação](brp_study/ACHADOS.md)
+- [Resultados da variante restrita](brp_study/results/summary.md) ·
+  [Resultados da variante irrestrita](brp_study/results/summary_unrestricted.md)
+- [Instâncias e regras da disciplina](data/instances/LEIAME.md)
+- [Código](brp_study/): [`brp.py`](brp_study/brp.py) (variante restrita) e
+  [`brp_unrestricted.py`](brp_study/brp_unrestricted.py) (variante irrestrita)
 
 Artigo de referência (arquivo em `artigos/`):
 
@@ -15,6 +27,10 @@ Artigo de referência (arquivo em `artigos/`):
 
 As instâncias estão em `data/instances/`. O arquivo `data/instances/LEIAME.md` define a
 variante do problema, o formato dos arquivos e as regras de reporte.
+
+Além da variante restrita (seções 1 a 10), o projeto implementa a **variante irrestrita**
+com o método do artigo sem adaptações (**GLAH-U**) e um A\* exato próprio (**A\*-U**). Os
+resultados ficam separados dos da variante restrita (seção 11).
 
 A implementação usa apenas a biblioteca padrão do Python (3.10 ou superior). Nenhum pacote
 externo é necessário.
@@ -39,15 +55,25 @@ com espaço para a relocação.
 
 ## 2. Estrutura do projeto
 
+Todo o código fica em [`brp_study/`](brp_study/). Os caminhos abaixo são relativos à raiz do
+repositório.
+
 | Arquivo | Conteúdo |
 |---|---|
-| `brp.py` | Modelo do problema, verificador independente, Min-Max, A*, GLAH-R, condensação e busca em largura (BFS) de referência |
-| `run_experiments.py` | Executa a comparação em todos os arquivos de instâncias, verifica as soluções e grava os resultados |
-| `test_brp.py` | Testes unitários: regras do verificador, A* contra BFS em casos pequenos, validade das soluções do GLAH-R, integridade dos dados |
+| [`brp_study/brp.py`](brp_study/brp.py) | Modelo do problema, verificador independente, Min-Max, A*, GLAH-R, condensação e busca em largura (BFS) de referência |
+| [`brp_study/run_experiments.py`](brp_study/run_experiments.py) | Executa a comparação em todos os arquivos de instâncias, verifica as soluções e grava os resultados |
+| [`brp_study/test_brp.py`](brp_study/test_brp.py) | Testes unitários: regras do verificador, A* contra BFS em casos pequenos, validade das soluções do GLAH-R, integridade dos dados |
+| [`brp_study/brp_unrestricted.py`](brp_study/brp_unrestricted.py) | Variante irrestrita: limite inferior do artigo, BFS, A\*-U e GLAH-U (seção 11) |
+| [`brp_study/test_brp_unrestricted.py`](brp_study/test_brp_unrestricted.py) | Testes da variante irrestrita: verificador, limite inferior, A\*-U contra BFS, casos do nível inferior, categorias de relocação, GLAH-U |
 | `README.md` | Este documento |
-| `results/results_long.csv` | Uma linha por par (instância, método), com a sequência completa de relocações |
-| `results/summary.md` | Tabelas gerais e por arquivo, geradas pelo script |
-| `run_log.txt` | Saída local da execução completa (não versionada, ver `.gitignore`) |
+| [`brp_study/ACHADOS.md`](brp_study/ACHADOS.md) | Achados dos resultados das duas variantes, com tabelas, exemplo ilustrado e roteiro para a apresentação |
+| [`brp_study/results/results_long.csv`](brp_study/results/results_long.csv) | Uma linha por par (instância, método), com a sequência completa de relocações |
+| [`brp_study/results/summary.md`](brp_study/results/summary.md) | Tabelas gerais e por arquivo, geradas pelo script |
+| [`brp_study/results/unrestricted_long.csv`](brp_study/results/unrestricted_long.csv), [`brp_study/results/summary_unrestricted.md`](brp_study/results/summary_unrestricted.md) | O mesmo para a variante irrestrita, mais a comparação com a restrita |
+| `brp_study/run_log.txt`, `brp_study/run_log_unrestricted.txt` | Saída local das execuções completas (não versionada, ver `.gitignore`) |
+| [`data/instances/`](data/instances/) | As 17 instâncias da disciplina e o [`LEIAME.md`](data/instances/LEIAME.md) com as regras |
+| `artigos/` | PDF do artigo de referência (não versionado) |
+| [`.github/workflows/brp-evaluation.yml`](.github/workflows/brp-evaluation.yml) | Execução manual da comparação no GitHub Actions |
 
 ## 3. Mecânica comum (`brp.py`)
 
@@ -199,6 +225,8 @@ Requisito: Python 3.10 ou superior.
 python -m unittest discover -s brp_study -v           # testes unitários
 python brp_study\run_experiments.py                    # execução completa, 30 s por instância e método
 python brp_study\run_experiments.py --only W5_H5       # um único arquivo
+python brp_study\run_experiments.py --variant unrestricted   # variante irrestrita (seção 11)
+python brp_study\run_experiments.py --variant both           # as duas, na ordem restrita -> irrestrita
 ```
 
 Os resultados vão para `brp_study/results/`:
@@ -225,7 +253,7 @@ print(verify(inst, [(3, 2), (3, 2), (3, 1)]))   # formato de exemplo do LEIAME.m
 Execução completa: 170 instâncias (17 arquivos), 4 métodos, orçamento de 30 s por instância e
 método, em uma máquina Windows com Python 3.13. Resultado: **680 linhas, todas as soluções
 verificadas** (0 falhas). Tempo total de execução: cerca de 17 minutos. Os valores completos
-estão em `results/summary.md` e `results/results_long.csv`.
+estão em [`brp_study/results/summary.md`](brp_study/results/summary.md) e `brp_study/results/results_long.csv`.
 
 ### 9.1 Resumo geral
 
@@ -314,3 +342,167 @@ no limite). Os métodos do GLAH-R e o Min-Max ficam abaixo de 4 s nesses mesmos 
   bit no mesmo código, exceto pelas colunas de tempo.
 - **Instâncias.** Os dados são usados como estão (o `LEIAME.md` pede isso para que todos os
   resultados sejam comparáveis).
+
+---
+
+## 11. Variante irrestrita (`brp_unrestricted.py`)
+
+Esta seção implementa o problema que o artigo de Jin, Zhu & Lim (2015) de fato resolve: o
+**U-CRP**, a variante irrestrita. Os resultados ficam separados dos das seções 1 a 10, porque o
+`LEIAME.md` define a comparação entre equipes na variante restrita.
+
+### 11.1 Problema
+
+As regras são as da seção 1, com uma diferença: **qualquer contêiner que esteja no topo de
+qualquer pilha pode ser relocado** para outra pilha com altura menor que H. Isso inclui
+relocações antecipadas de contêineres que não estão acima do alvo. Toda solução restrita também
+é uma solução irrestrita, então **Z\*_U ≤ Z\*_R** em toda instância.
+
+O verificador é o mesmo da seção 3, chamado com `verify(inst, moves, restricted=False)`. Nesse
+modo, ele deixa de exigir que a origem contenha o alvo e mantém as demais regras: origem válida
+e não vazia, destino diferente da origem e com espaço, e pátio vazio no fim. O padrão continua
+sendo `restricted=True`, de modo que o código e os resultados restritos não mudam.
+
+### 11.2 Limite inferior
+
+Usa o limite completo da seção 4.1.1 do artigo: **número de contêineres mal posicionados +
+k_non-BG**. O termo binário `k_non-BG` vale 1 quando não há pilha vazia e
+`min gtop(s) > max gmin(s)`. Nessa situação, todo topo está mal posicionado e qualquer destino já
+tem um número menor, então o primeiro contêiner movido continua mal posicionado e precisa de mais
+um movimento.
+
+### 11.3 A\*-U (exato)
+
+- **Sucessores:** todos os pares `(origem, destino)` legais, até W·(W−1) por estado.
+- **Função de avaliação:** `f = g + LB`, com o limite da seção 11.2.
+- **Reduções:** todas preservam a otimalidade e foram conferidas contra uma busca em largura
+  sem reduções (`solve_bfs_u`).
+  - **Simetria:** pátios que são permutações das mesmas pilhas compartilham uma única entrada
+    na tabela de estados fechados, e só a primeira pilha vazia é usada como destino.
+  - **Dominância:** o contêiner movido por último não é movido de novo, a menos que tenha
+    havido uma retirada no meio. A sequência `c: s1→s2, c: s2→s3` nunca é mais curta que
+    `c: s1→s3`.
+  - **Incumbente:** a melhor solução heurística (Min-Max ou GLAH-U) serve como limite superior
+    UB, e todo nó com `f ≥ UB` é descartado. Se a fila aberta esvaziar, ou se o menor `f` chegar
+    a UB, a incumbente está provada ótima.
+- **Orçamento:** limite de tempo e um limite de 3 milhões de nós como proteção de memória. No
+  timeout, o A\*-U não reporta solução; a coluna `lower_bound` guarda o menor `f` da fila
+  aberta. O tempo das heurísticas que fornecem a incumbente não é somado ao do A\*-U.
+
+### 11.4 GLAH-U: o método do artigo, sem adaptações
+
+O GLAH-U implementa os três níveis do GLAH como publicados. As diferenças em relação ao GLAH-R
+(tabela 6.3) são exatamente as partes que a variante restrita proibia.
+
+| Componente | GLAH-R (seção 6) | GLAH-U (aqui) |
+|---|---|---|
+| Categorias de relocação no look-ahead | FT-BG, FT-BB | **FT-BG, NF-BG, FT-BB, NF-BB, GG, GB** |
+| Ramificação | destinos do bloqueador | **qualquer relocação `(origem, destino)`** |
+| Caso 2 do nível inferior (abrir espaço movendo um topo bem posicionado para uma pilha assistente) | removido | **sim** |
+| Aproveitamento de folga (*gap utilization*, Algoritmo 4) | removido | **sim**, antes de cada relocação X→Good dos casos 1 e 2 |
+| Limite inferior | só a contagem | **contagem + k_non-BG** |
+| Custo da folha | `d + |avaliação|` | comprimento da sequência condensada a partir da raiz (seção 4.3.5) |
+| Correção de sincronização (outer-sync) | destino do nível inferior | **primeira relocação** do nível inferior, que pode ser de folga ou o GG do caso 2 |
+
+**Parâmetros do artigo** (seção 5): `nFT-BG = nNF-BG = 5`, `nFT-BB = nNF-BB = 3`,
+`nGG = nGB = 1` e `D ∈ {3, 4}`.
+
+**Ordenação das categorias** (seção 4.2.2):
+
+| Categoria | Critério |
+|---|---|
+| X-BG | `gmin(s2) − c`, crescente |
+| X-BB | `c − gmin(s2)`, crescente |
+| GG e GB | `f(s1) − gmin(s2)`, decrescente |
+
+Empates são decididos pelo menor `(s1, s2)`. O texto do artigo dá o mesmo critério para GG e GB,
+e ele foi usado como está.
+
+**Definições** (seção 2 do artigo): `gmin(s)` é o menor número da pilha `s` (`N+1` se vazia), e
+`f(s)` é o menor número da pilha sem contar o topo (`N+1` se a pilha tiver menos de dois
+contêineres). Um topo está bem posicionado quando `gtop(s) < f(s)`. A pilha `s` suporta `c` quando
+`h(s) < H` e `c < gmin(s)`. Com prioridades únicas, o alvo urgente da seção 4.3.1 é sempre o
+menor número.
+
+**Opção fora do artigo:** `solve_glah_u(..., seed=moves)` aceita uma solução inicial extra, por
+exemplo a do GLAH-R. Ela fica desligada nos experimentos.
+
+**Desempenho:** a avaliação do nível inferior fica em cache por estado, e a retirada automática
+usa a ordem de retirada conhecida. Mesmo assim, o GLAH-U visita muito mais nós que o GLAH-R, até
+cerca de 19 filhos por nó.
+
+### 11.5 Testes (`test_brp_unrestricted.py`)
+
+- **Verificador:** regras da variante irrestrita, e a variante restrita continua sendo o padrão.
+- **Limite inferior:** o termo `k_non-BG`, e o limite nunca passa do ótimo.
+- **A\*-U contra BFS:** resultados iguais, com e sem incumbente, nas instâncias pequenas.
+- **Z\*_U ≤ Z\*_R** nos arquivos W3 e W4, com pelo menos um caso estritamente melhor.
+- **Nível inferior:** caso 1 com aproveitamento de folga e caso 2 (GG seguido de BG), em pátios
+  construídos para isso.
+- **Classificação:** as seis categorias de relocação e a lista de candidatos.
+- **GLAH-U:** soluções verificadas, entre o ótimo e a avaliação inicial.
+- **Condensação.**
+
+Uma validação cruzada extra conferiu o A\*-U contra o BFS nos arquivos `W4_H4_N10` e
+`W4_H5_N12` completos: 0 divergências. As figuras 4 a 7 e 9 a 10 do artigo são imagens no PDF e
+não puderam ser transcritas automaticamente como testes.
+
+### 11.6 Resultados
+
+Execução completa: 170 instâncias, 4 métodos, orçamento de 30 s por instância e método, na mesma
+máquina da seção 9. Resultado: **680 linhas, todas as soluções verificadas** com as regras
+irrestritas. Tempo total: cerca de 34 minutos. Os valores completos estão em
+[`brp_study/results/summary_unrestricted.md`](brp_study/results/summary_unrestricted.md) e `brp_study/results/unrestricted_long.csv`.
+
+| Método | Soluções verificadas | Gap médio (%) | Gap máximo (%) | Igual a Z\*_U | Melhor que Min-Max | Tempo médio (s) | Tempo máximo (s) | Timeouts |
+|---|---|---|---|---|---|---|---|---|
+| Min-Max | 170 | 11,39 | 50,00 | 72 | 0 | 0,000 | 0,00 | 0 |
+| A\*-U | 129 | 0,00 | 0,00 | 128 | 57 | 7,926 | 30,15 | 41 |
+| GLAH-U (D=3) | 170 | 0,38 | 11,11 | 156 | 97 | 0,649 | 11,67 | 0 |
+| GLAH-U (D=4) | 170 | 0,25 | 11,11 | 160 | 97 | 3,269 | 30,00 | 9 |
+
+O gap é medido contra Z\*_U, que é o ótimo do A\*-U quando provado e, caso contrário, a melhor
+solução irrestrita encontrada. O Min-Max é o mesmo da seção 4: as soluções dele são válidas nas
+duas variantes, mas o gap dele cresce aqui porque a referência Z\*_U é menor.
+
+**Ganho do irrestrito sobre o restrito**, comparando os valores de referência por instância:
+
+| Conjunto | Z\*_R médio | Z\*_U médio | Ganho médio | Ganho (%) | Instâncias com Z\*_U < Z\*_R |
+|---|---|---|---|---|---|
+| Todas (170) | 16,86 | 15,62 | 1,25 | 7,4 | 88 |
+| Ótimos provados nas duas variantes (127) | — | — | 0,61 | — | 48 |
+
+Por arquivo, o ganho vai de 0% (`W7_H5_N16`) a cerca de 10–11% (`W7_H5_N31`, `W7_H7_N32`), e
+cresce com a ocupação do pátio. A tabela completa está em [`brp_study/results/summary_unrestricted.md`](brp_study/results/summary_unrestricted.md).
+
+**Principais observações:**
+
+- **Relocações antecipadas reduzem o número de movimentos.** Em nenhuma instância Z\*_U ficou
+  acima de Z\*_R. Nas 127 instâncias com ótimo provado nas duas variantes, o irrestrito é
+  estritamente melhor em 48, com ganho de até 4 movimentos.
+- **O GLAH-U nunca fica pior que o GLAH-R com a mesma profundidade.** É estritamente melhor em
+  89 (D=3) e 90 (D=4) das 170 instâncias, sem usar a solução restrita como semente.
+- **O GLAH-U fica perto do ótimo.** Nas 129 instâncias com ótimo provado pelo A\*-U, o D=3 fica
+  acima do ótimo em 6 e o D=4 em 4, sempre por 1 ou 2 movimentos, nos arquivos `W7_H5_N31`,
+  `W7_H6_N28` e `W7_H7_N32`. O pior gap é 11,1% (`W7_H7_N32`, instância 6, 18 contra 20).
+- **D=4 melhora pouco e custa bem mais.** Comparado ao D=3, o D=4 é melhor em 10 instâncias e
+  pior em 5, e fica cerca de 5 vezes mais lento. No `W7_H8_N49`, o D=4 esgota os 30 s em 8 das
+  10 instâncias e fica pior que o D=3 na média (43,9 contra 43,5), porque devolve a melhor
+  solução encontrada até o limite.
+- **O A\*-U é bem mais difícil que o A\* restrito.** Ele provou o ótimo em 129 instâncias, contra
+  144 do A\* restrito, e todos os 41 timeouts estão em arquivos W7 (N ≥ 24, H ≥ 5). Nos arquivos
+  `W7_H7_N43` e `W7_H8_N49`, nenhuma instância foi provada, e os limites inferiores devolvidos
+  ficaram entre 15 e 40, bem abaixo das melhores soluções. Nessas instâncias, Z\*_U é só o melhor
+  valor conhecido.
+
+### 11.7 Limitações
+
+- **Gap fraco nos arquivos grandes.** Sem ótimo provado, o gap e o ganho são medidos contra o
+  melhor valor conhecido. Nesses arquivos, o ganho real do irrestrito pode ser maior que o
+  reportado.
+- **Uso da incumbente.** O A\*-U recebe a incumbente das heurísticas. O tempo do A\*-U não inclui
+  o tempo dessas heurísticas.
+- **Tempo em Python.** O artigo usa Java. Em Python, o D=4 não cabe no orçamento de 30 s nas
+  maiores instâncias, e os tempos não são comparáveis aos da tabela do artigo.
+- **Instâncias diferentes das do artigo.** As instâncias não são os conjuntos CVS, BF ou ZHU do
+  artigo, então os números não reproduzem as tabelas 1 a 4. O que se reproduz é o método.

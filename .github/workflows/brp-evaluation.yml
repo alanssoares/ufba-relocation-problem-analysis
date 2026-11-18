@@ -1,6 +1,7 @@
 name: BRP evaluation
 
-# Executa a comparação Min-Max x A* x GLAH-R sobre o pacote de instâncias
+# Executa a comparação Min-Max x A* x GLAH-R (variante restrita) e/ou
+# Min-Max x A*-U x GLAH-U (variante irrestrita) sobre o pacote de instâncias
 # e publica a tabela de resultados no resumo da execução (aba "Summary").
 #
 # Execução manual: Actions > "BRP evaluation" > Run workflow.
@@ -21,10 +22,16 @@ on:
         default: '30'
         type: string
       depths:
-        description: 'Profundidades D do look-ahead do GLAH-R, separadas por espaço'
+        description: 'Profundidades D do look-ahead do GLAH, separadas por espaço'
         required: false
         default: '3 4'
         type: string
+      variant:
+        description: 'Variante do BRP'
+        required: false
+        default: 'restricted'
+        type: choice
+        options: [restricted, unrestricted, both]
 permissions:
   contents: read
 
@@ -36,6 +43,7 @@ jobs:
       ONLY: ${{ inputs.only }}
       TIME_LIMIT: ${{ inputs.time_limit }}
       DEPTHS: ${{ inputs.depths }}
+      VARIANT: ${{ inputs.variant }}
     steps:
       - uses: actions/checkout@v4
 
@@ -52,7 +60,7 @@ jobs:
           python -u brp_study/run_experiments.py \
             --only "$ONLY" \
             --time-limit "$TIME_LIMIT" \
-            --depths $DEPTHS \
+            --depths $DEPTHS             --variant "$VARIANT" \
             --out-dir brp_study/results_ci | tee brp_study/results_ci/run_log.txt
 
       - name: Publicar tabela no resumo da execução
@@ -65,11 +73,18 @@ jobs:
             echo "|---|---|"
             echo "| Arquivos (filtro) | \`${ONLY:-todos}\` |"
             echo "| Orçamento por instância (s) | $TIME_LIMIT |"
-            echo "| Profundidades GLAH-R (D) | $DEPTHS |"
+            echo "| Profundidades GLAH (D) | $DEPTHS |"
+            echo "| Variante | $VARIANT |"
             echo ""
-            if [ -f brp_study/results_ci/summary.md ]; then
-              sed 's/^# /## /' brp_study/results_ci/summary.md
-            else
+            found=0
+            for f in summary.md summary_unrestricted.md; do
+              if [ -f "brp_study/results_ci/$f" ]; then
+                sed 's/^# /## /' "brp_study/results_ci/$f"
+                echo ""
+                found=1
+              fi
+            done
+            if [ "$found" = 0 ]; then
               echo "**A execução não gerou o resumo.** Veja o log do passo anterior."
             fi
           } >> "$GITHUB_STEP_SUMMARY"
